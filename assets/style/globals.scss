@@ -1,0 +1,53 @@
+* {
+	box-sizing: border-box;
+	align-items: center;
+}
+
+button {
+	padding: .25rem;
+}
+
+// #modal {
+// 	table {
+// 	}
+// }
+
+body {
+	width: 100vw;
+	min-height: 100dvh;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: 1rem;
+	#page-wrapper {
+		width: 100%;
+		&.login {
+			width: clamp(350px, 30vw, 500px);
+		}
+		&.login {
+			form {
+				p.error {
+					color: var(--pico-del-color);
+					display: none;
+					&.active {
+						display: block;
+					}
+				}
+			}
+		}
+
+		> .list {
+			> header {
+				display: flex;
+				justify-content: space-between;
+				> section {
+					display: flex;
+					gap: 5px;
+					input {
+						margin: 0;
+					}
+				}
+			}
+		}
+	}
+}

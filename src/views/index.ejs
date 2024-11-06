@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>nl2rss</title>
+    <link rel="stylesheet" href="/style/pico.min.css">
+    <link rel="stylesheet" href="/style/build/globals.css">
+  </head>
+  <body>
+		<dialog id="modal">
+			<article>
+				<header>
+					<p class="title"></p>
+				</header>
+				<main>
+					<form></form>
+				</main>
+				<footer>
+					<button class="secondary">cancel</button>
+					<button class="primary">submit</button>
+				</footer>
+			</article>
+		</dialog>
+		<div id="page-wrapper">
+			<article class="list" id="feeds">
+				<header>
+					<h2>Feeds</h2>
+					<section>
+						<button id="add-feed">Add</button>
+						<form class="search">
+							<input placeholder="filter" type="search">
+						</form>
+					</section>
+				</header>
+				<main>
+				</main>
+			</article>
+			<article class="list" id="sources">
+				<header>
+					<h2>Sources</h2>
+					<form class="search">
+						<input placeholder="filter" type="search">
+					</form>
+				</header>
+				<main></main>
+			</article>
+			<article class="list" id="articles">
+				<header>
+					<h2>Articles</h2>
+					<form class="search">
+						<input placeholder="filter" type="search">
+					</form>
+				</header>
+				<main class="">
+					<table class="striped">
+						<thead>
+							<tr>
+								<th>#</th>
+								<th>title</th>
+								<th>source</th>
+								<th>hidden</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</main>
+			</article>
+		</div>
+		<script src="/scripts/app.js"></script>
+  </body>
+</html>

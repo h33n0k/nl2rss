@@ -1,0 +1,7 @@
+node_modules/
+jest.config.cjs
+public/*
+jwt/*
+assets/
+dist/
+tests/

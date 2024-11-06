@@ -1,0 +1,29 @@
+volumes:
+  nl2rss-database:
+
+services:
+
+  nl2rss:
+    container_name: nl2rss
+    restart: unless-stopped
+    build:
+      context: .
+    env_file: .env
+    volumes:
+      - ./jwt/:/etc/nl2rss/keys/
+      - ./logs/:/var/log/nl2rss/
+      - ./data/:/data/nl2rss/
+    depends_on:
+      - mariadb
+    ports:
+      - 80:3000
+
+  mariadb:
+    image: mariadb:latest
+    container_name: nl2rss-database
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - nl2rss-database:/var/lib/mysql
+    # ports:
+    #   - 3306:3306

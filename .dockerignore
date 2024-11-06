@@ -1,0 +1,13 @@
+.git/
+dist/
+logs/
+jwt/
+node_modules/
+
+.editorconfig
+.env
+.eslint*
+.gitignore
+.nvmrc
+.prettier*
+docker-compose.yaml

@@ -1,0 +1,43 @@
+* {
+  box-sizing: border-box;
+  align-items: center;
+}
+
+button {
+  padding: 0.25rem;
+}
+
+body {
+  width: 100vw;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+body #page-wrapper {
+  width: 100%;
+}
+body #page-wrapper.login {
+  width: clamp(350px, 30vw, 500px);
+}
+body #page-wrapper.login form p.error {
+  color: var(--pico-del-color);
+  display: none;
+}
+body #page-wrapper.login form p.error.active {
+  display: block;
+}
+body #page-wrapper > .list > header {
+  display: flex;
+  justify-content: space-between;
+}
+body #page-wrapper > .list > header > section {
+  display: flex;
+  gap: 5px;
+}
+body #page-wrapper > .list > header > section input {
+  margin: 0;
+}
+
+/*# sourceMappingURL=globals.css.map */

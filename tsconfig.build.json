@@ -1,0 +1,22 @@
+{
+	"compilerOptions": {
+		"baseUrl": "dist",
+		"paths": {
+			"@": ["./"],
+			"@schemas": ["./schemas"],
+			"@resolvers": ["./resolvers"],
+			"@services": ["./services"],
+			"@utils": ["./utils"],
+			"@types": ["./types"],
+			"@routes/*": ["./routes/*"],
+			"@templates/*": ["./templates/*"]
+		}
+	},
+	"extends": "./tsconfig.json",
+	"exclude": [
+		"**/*.test.ts",
+		"test",
+		"**/*.d.ts",
+		"**/__mocks__/*"
+	]
+}

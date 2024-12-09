@@ -26,7 +26,7 @@ class UndefinedImapClientError extends Data.TaggedError('UndefinedImapClient') {
 	}
 }
 
-class MailParseError extends Data.TaggedError('ImapParse') {
+class MailParseError extends Data.TaggedError('MailParse') {
 	public readonly message: string
 	public readonly error: unknown
 	constructor(error: unknown) {
@@ -124,6 +124,7 @@ export const connect = () =>
 
 const parseMail = (stream: NodeJS.ReadableStream) =>
 	Effect.gen(function* () {
+		logger.debug('parsing mail')
 		const buffer = yield* Effect.tryPromise({
 			try: () => {
 				const chunks: Buffer[] = []
@@ -160,7 +161,9 @@ const parseMail = (stream: NodeJS.ReadableStream) =>
 			date: mail.date?.toString(),
 			html: mail.html || mail.textAsHtml,
 			uid: hashString(`${mail.from?.value[0].address}${mail.subject}${mail.date?.toString()}`)
-		})
+		}).pipe(
+			Effect.catchAll((error) => new MailParseError(error))
+		)
 
 		return parsed
 	})
@@ -195,10 +198,30 @@ export const fetchMails = (n: string | number = '*') =>
 		logger.info(`${raws.length} Mails fetched.`)
 
 		for (const raw of raws) {
-			const mail = yield* parseMail(raw)
-			const source = yield* SourceService.create(mail.name, mail.address)
-			yield* ArticleService.create(mail.uid, mail.subject, source)
-			yield* ArticleService.write(mail.uid, mail.html)
+			yield* parseMail(raw).pipe(
+				Effect.flatMap((mail) =>
+					Effect.gen(function* () {
+						logger.debug('saving mail into database..')
+						const source = yield* SourceService.create(mail.name, mail.address)
+						yield* ArticleService.create(mail.uid, mail.subject, source)
+						yield* ArticleService.write(mail.uid, mail.html)
+					})
+				),
+				Effect.catchTags({
+					MailParse: (error) => {
+						logger.warn('Could not parse mail content')
+						return Effect.fail(error)
+					},
+					DatabaseQuery: (error) => {
+						logger.warn('Could not save mail into database')
+						return Effect.fail(error)
+					}
+				}),
+				Effect.catchAll(() => {
+					logger.info('Skipping..')
+					return Effect.succeed(null)
+				})
+			)
 		}
 	})
 

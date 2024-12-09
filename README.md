@@ -75,6 +75,7 @@ docker compose up -d
 | `API` | Boolean that is used to allow API access (required if using dashboard) | `true` |
 | `LOGS_ENABLED` | Enable or Disable logs | `true` |
 | `LOGS_PATH` | Logs path | `/var/log/nl2rss/` |
+| `JWT_SECURE` | JsonWebToken secure cookie | `true` |
 | `JWT_PRIVATE` | JsonWebToken private key path | `/etc/nl2rss/keys/private.key` |
 | `JWT_PUBLIC` | JsonWebToken public key path | `/etc/nl2rss/keys/public.key` |
 | `IMAP_RETRIES` | Number of retries in case of connection failed | `3` |

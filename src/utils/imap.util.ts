@@ -1,4 +1,4 @@
-import { Effect, Data, Schedule } from 'effect'
+import { Effect, Schedule } from 'effect'
 import { Schema } from '@effect/schema'
 import Imap from 'imap'
 import { ParsedMail, simpleParser } from 'mailparser'
@@ -7,66 +7,7 @@ import { ArticleService, SourceService } from '../services'
 import * as config from './config.util'
 import { hashString } from './hash.util'
 import { imap as logger } from './logger.util'
-
-class BoxError extends Data.TaggedError('Box') {
-	public readonly message: string
-	public readonly error: unknown
-	constructor(error: unknown, box: string) {
-		super()
-		this.message = `Failed to open box '${box}'`
-		this.error = error
-	}
-}
-
-class UndefinedImapClientError extends Data.TaggedError('UndefinedImapClient') {
-	public readonly message: string
-	constructor() {
-		super()
-		this.message = 'The IMAP client has not been initialized.'
-	}
-}
-
-class MailParseError extends Data.TaggedError('MailParse') {
-	public readonly message: string
-	public readonly error: unknown
-	constructor(error: unknown) {
-		super()
-		this.message = 'Failed to parse'
-		this.error = error
-	}
-}
-
-class ImapFetchError extends Data.TaggedError('ImapFetch') {
-	public readonly message: string
-	constructor(error: any) {
-		super()
-		this.message = 'Imap Fetch Failed.'
-		console.log(error)
-	}
-}
-
-class ImapConnectionError extends Data.TaggedError('ImapConnection') {
-	public readonly message: string
-	constructor(
-		error: any,
-		connection: {
-			user: string
-			password: string
-			host: string
-			port: number
-			tls: boolean
-		}
-	) {
-		super()
-
-		if (error instanceof Error) {
-			console.log(error.name)
-		}
-
-		const password = new Array(connection.password.length).fill('*').join('')
-		this.message = `Connection Refused to ${connection.user}:${password}@${connection.host}:${connection.port} TLS=${connection.tls}`
-	}
-}
+import { ImapHandler } from '../handlers'
 
 let client: Imap
 
@@ -105,7 +46,7 @@ export const connect = () =>
 						logger.warn('Failed to connect to the IMAP Server. retrying..')
 					}
 
-					return new ImapConnectionError(error, { user, password, host, port, tls })
+					return new ImapHandler.ImapConnectionError(error, { user, password, host, port, tls })
 				}
 			}),
 			Schedule.addDelay(Schedule.recurs(retries - 1), () => '5 seconds')
@@ -135,7 +76,7 @@ const parseMail = (stream: NodeJS.ReadableStream) =>
 					stream.on('error', reject)
 				})
 			},
-			catch: (error) => new MailParseError(error)
+			catch: (error) => new ImapHandler.MailParseError(error)
 		})
 
 		const mail = yield* Effect.tryPromise({
@@ -149,7 +90,7 @@ const parseMail = (stream: NodeJS.ReadableStream) =>
 						resolve(mail)
 					})
 				}),
-			catch: (error) => new MailParseError(error)
+			catch: (error) => new ImapHandler.MailParseError(error)
 		})
 
 		const parsed = yield* Schema.decodeUnknown(MailSchema.schema, {
@@ -161,9 +102,7 @@ const parseMail = (stream: NodeJS.ReadableStream) =>
 			date: mail.date?.toString(),
 			html: mail.html || mail.textAsHtml,
 			uid: hashString(`${mail.from?.value[0].address}${mail.subject}${mail.date?.toString()}`)
-		}).pipe(
-			Effect.catchAll((error) => new MailParseError(error))
-		)
+		}).pipe(Effect.catchAll((error) => new ImapHandler.MailParseError(error)))
 
 		return parsed
 	})
@@ -173,12 +112,12 @@ export const fetchMails = (n: string | number = '*') =>
 		logger.info('Fetching mails..')
 
 		if (!client) {
-			return yield* Effect.fail(new UndefinedImapClientError())
+			return yield* Effect.fail(new ImapHandler.UndefinedImapClientError())
 		}
 
 		const f = yield* Effect.try({
 			try: () => client.seq.fetch(`1:${n}`, { envelope: true, bodies: '' }),
-			catch: (error: any) => new ImapFetchError(error)
+			catch: (error: any) => new ImapHandler.ImapFetchError(error)
 		})
 
 		const raws = yield* Effect.tryPromise({
@@ -192,7 +131,7 @@ export const fetchMails = (n: string | number = '*') =>
 						})
 					})
 				}),
-			catch: (error: any) => new ImapFetchError(error)
+			catch: (error: any) => new ImapHandler.ImapFetchError(error)
 		})
 
 		logger.info(`${raws.length} Mails fetched.`)
@@ -210,15 +149,18 @@ export const fetchMails = (n: string | number = '*') =>
 				Effect.catchTags({
 					MailParse: (error) => {
 						logger.warn('Could not parse mail content')
+
 						return Effect.fail(error)
 					},
 					DatabaseQuery: (error) => {
 						logger.warn('Could not save mail into database')
+
 						return Effect.fail(error)
 					}
 				}),
 				Effect.catchAll(() => {
 					logger.info('Skipping..')
+
 					return Effect.succeed(null)
 				})
 			)
@@ -244,8 +186,22 @@ export const listen = () =>
 					})
 				})
 			},
-			catch: (error) => new BoxError(error, box)
+			catch: (error) => new ImapHandler.BoxError(error, box)
 		})
 
 		yield* fetchMails()
+		client.on('mail', (n: number) => {
+			logger.info(`${n} new Mail(s) received.`)
+			fetchMails(n).pipe(
+				Effect.catchTags({
+					ImapFetch: (error) => {
+						logger.error('Could not fetch new mails.')
+
+						return Effect.fail(error)
+					}
+				}),
+				Effect.ignore,
+				Effect.runPromise
+			)
+		})
 	}).pipe(Effect.runPromise)

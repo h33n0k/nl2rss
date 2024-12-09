@@ -24,7 +24,7 @@ export const loginHandler = (
 		res.cookie('accessToken', token, {
 			httpOnly: true,
 			sameSite: 'strict',
-			secure: true,
+			secure: yield* config.getParam<boolean>('jwt.secure'),
 			maxAge: yield* config.getParam<number>('jwt.expire'),
 			path: '/'
 		})

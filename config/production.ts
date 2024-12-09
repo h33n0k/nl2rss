@@ -1,4 +1,7 @@
 export default {
+	jwt: {
+		secure: true
+	},
 	database: {
 		// host: 'localhost',
 		host: 'mariadb',

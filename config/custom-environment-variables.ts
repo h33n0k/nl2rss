@@ -14,6 +14,7 @@ export default {
 		path: 'LOGS_PATH'
 	},
 	jwt: {
+		secure: 'JWT_SECURE',
 		keys: {
 			private: 'JWT_PRIVATE',
 			public: 'JWT_PUBLIC'

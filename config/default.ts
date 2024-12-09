@@ -13,6 +13,7 @@ export default {
 		path: '/var/log/nl2rss/'
 	},
 	jwt: {
+		secure: false,
 		algorithm: 'RS256',
 		expire: 1000 * 60 * 30,
 		keys: {

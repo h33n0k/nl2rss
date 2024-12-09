@@ -107,6 +107,7 @@ const parseMail = (stream: NodeJS.ReadableStream) =>
 		return parsed
 	})
 
+let totalMails = 0
 export const fetchMails = (n: string | number = '*') =>
 	Effect.gen(function* () {
 		logger.info('Fetching mails..')
@@ -115,8 +116,17 @@ export const fetchMails = (n: string | number = '*') =>
 			return yield* Effect.fail(new ImapHandler.UndefinedImapClientError())
 		}
 
+		let start = 1
+		let end = '*' as number | string
+
+		if (typeof n === 'number') {
+			totalMails += n
+			start = Math.max(1, totalMails - n + 1)
+			end = totalMails
+		}
+
 		const f = yield* Effect.try({
-			try: () => client.seq.fetch(`1:${n}`, { envelope: true, bodies: '' }),
+			try: () => client.seq.fetch(`${start}:${end}`, { envelope: true, bodies: '' }),
 			catch: (error: any) => new ImapHandler.ImapFetchError(error)
 		})
 
@@ -135,6 +145,10 @@ export const fetchMails = (n: string | number = '*') =>
 		})
 
 		logger.info(`${raws.length} Mails fetched.`)
+
+		if (n === '*') {
+			totalMails = raws.length
+		}
 
 		for (const raw of raws) {
 			yield* parseMail(raw).pipe(

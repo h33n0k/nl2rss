@@ -15,10 +15,10 @@
 	"main": "dist/index.js",
 	"bin": "dist/index.js",
 	"scripts": {
-		"start": "cross-env NODE_ENV=production node dist/src/index.js",
-		"dev": "cross-env NODE_ENV=production ts-node-dev --quiet --clear --rs --transpile-only src/index.ts",
+		"start": "cross-env NODE_ENV=production LOG_LEVEL=info node dist/src/index.js",
+		"dev": "cross-env NODE_ENV=production LOG_LEVEL=debug ts-node-dev --quiet --clear --rs --transpile-only src/index.ts",
 		"build": "cross-env NODE_ENV=production npx tsc -p ./tsconfig.build.json",
-		"test": "cross-env NODE_ENV=development jest",
+		"test": "cross-env NODE_ENV=development LOG_LEVEL=DEBUG jest",
 		"clean": "rm -rf dist/",
 		"format": "prettier --write \"**/*.ts\"",
 		"lint": "eslint -c ./eslint.config.mjs \"./**/*.ts\" --fix",
@@ -45,6 +45,8 @@
 		"typescript-eslint": "^8.24.1"
 	},
 	"dependencies": {
-		"config": "^3.3.12"
+		"config": "^3.3.12",
+		"winston": "^3.17.0",
+		"winston-daily-rotate-file": "^5.0.0"
 	}
 }

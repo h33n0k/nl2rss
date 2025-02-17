@@ -28,6 +28,7 @@
 	"devDependencies": {
 		"@eslint/js": "^9.20.0",
 		"@types/config": "^3.3.5",
+		"@types/imap": "^0.8.42",
 		"@types/jest": "^29.5.14",
 		"@types/node": "^22.13.4",
 		"cross-env": "^7.0.3",
@@ -46,6 +47,8 @@
 	},
 	"dependencies": {
 		"config": "^3.3.12",
+		"effect": "^3.13.1",
+		"imap": "^0.8.19",
 		"winston": "^3.17.0",
 		"winston-daily-rotate-file": "^5.0.0"
 	}

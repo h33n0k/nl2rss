@@ -64,3 +64,27 @@ export const connect = () =>
 		)
 		.then(() => logger.info('Connected to the IMAP Server.'))
 		.catch(() => process.exit(1))
+
+
+export const listen = () =>
+	Effect.gen(function* () {
+		const imapBox = config.get<string>('imap.box')
+
+		// open Imap box
+		yield* Effect.tryPromise({
+			try: () => {
+				return new Promise((resolve, reject) => {
+					client.openBox(imapBox, (error, box) => {
+						if (error) reject(error)
+						logger.info(`Opened box '${imapBox}'`)
+						resolve(box)
+					})
+				})
+			},
+			catch: (error) => new ImapHandler.BoxError(error, imapBox)
+		})
+
+		client.on('mail', (n: number) => {
+			logger.info(`${n} new mail(s) received.`)
+		})
+	}).pipe(Effect.runPromise)

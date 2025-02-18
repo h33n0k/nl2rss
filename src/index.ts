@@ -11,6 +11,7 @@ import logger from './utils/logger'
 async function main() {
 	logger.verbose('Starting main process.')
 	await imap.connect()
+	await imap.listen()
 }
 
 main()

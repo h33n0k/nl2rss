@@ -48,3 +48,13 @@ export class FetchError extends Data.TaggedError('Fetch') {
 		this.error = error
 	}
 }
+
+export class ParseError extends Data.TaggedError('Parse') {
+	public readonly message: string
+	public readonly error: unknown
+	constructor(error: unknown) {
+		super()
+		this.message = 'Could not parse mail.'
+		this.error = error
+	}
+}

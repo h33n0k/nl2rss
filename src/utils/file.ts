@@ -35,7 +35,7 @@ import logger from './logger'
  */
 export const checkDir = (dir: string) =>
 	Effect.gen(function* () {
-		logger.verbose(`Checking dir ${dir}`)
+		logger.debug(`Checking dir ${dir}`)
 
 		yield* Effect.tryPromise({
 			try: () =>
@@ -91,7 +91,7 @@ export const checkDir = (dir: string) =>
  */
 export const makeDir = (dir: string) =>
 	Effect.gen(function* () {
-		logger.verbose(`Making dir ${dir}`)
+		logger.debug(`Making dir ${dir}`)
 
 		yield* Effect.tryPromise({
 			try: () =>
@@ -157,7 +157,7 @@ export const write = (file: string, content: string) =>
 		}),
 		Effect.flatMap(() =>
 			Effect.gen(function* () {
-				logger.verbose(`Writting ${file}`)
+				logger.debug(`Writting ${file}`)
 
 				yield* Effect.tryPromise({
 					try: () => {

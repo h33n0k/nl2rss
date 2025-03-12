@@ -58,7 +58,7 @@ export const checkDir = (dir: string) =>
 		return dir
 	}).pipe(
 		Effect.catchAll((error) => {
-			logger.error(`${error.title}, ${error.message}`)
+			logger.debug(`${error.title}, ${error.message}`)
 			return error
 		})
 	)
@@ -107,11 +107,11 @@ export const makeDir = (dir: string) =>
 			catch: (error) => new FileHandler.AccessError(error, dir, 'MKDIR')
 		})
 
-		logger.info(`Writted ${dir}`)
+		logger.debug(`Writted ${dir}`)
 		return dir
 	}).pipe(
 		Effect.catchAll((error) => {
-			logger.error(`${error.title}, ${error.message}`)
+			logger.debug(`${error.title}, ${error.message}`)
 			return error
 		})
 	)
@@ -182,11 +182,11 @@ export const write = (file: string, content: string) =>
 					catch: (error) => new FileHandler.AccessError(error, file, 'WRITE')
 				})
 
-				logger.info(`Writted ${file}`)
+				logger.debug(`Writted ${file}`)
 				return file
 			}).pipe(
 				Effect.catchAll((error) => {
-					logger.error(`${error.title}, ${error.message}`)
+					logger.debug(`${error.title}, ${error.message}`)
 					return error
 				})
 			)

@@ -7,13 +7,8 @@ import { faker } from '@faker-js/faker'
 import * as FileHandler from '../../handlers/file'
 import * as fileUtil from '../file'
 
-import logger from '../logger'
-import { unknown } from 'zod'
 jest.mock('../logger')
 jest.mock('fs')
-// jest.mock('../file', () => ({
-// 	...jest.requireActual('../file')
-// }))
 
 const mockedDir = '/mocked-directory'
 const mockedFile = path.join(mockedDir, 'mocked-file.txt')

@@ -15,6 +15,10 @@ export default tseslint.config(
 	},
 	{
 		files: ['**/*.test.ts'],
+		rules: {
+			'@typescript-eslint/no-unused-vars': 'off',
+			'@typescript-eslint/no-require-imports': 'off'
+		},
 		languageOptions: {
 			globals: {
 				jest: true

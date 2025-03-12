@@ -1,4 +1,7 @@
 export default {
+	data: {
+		path: 'DATA_PATH'
+	},
 	imap: {
 		box: 'IMAP_BOX',
 		retries: 'IMAP_RETRIES',

@@ -8,7 +8,7 @@ import * as FileHandler from '../../handlers/file'
 import * as MailService from '../mail'
 import { Mail } from '../../schemas/mail'
 
-import * as fileUtils from '../../utils/file'
+import * as FileUtils from '../../utils/file'
 jest.mock('../../utils/logger')
 jest.mock('../../utils/file')
 
@@ -47,7 +47,7 @@ describe('services/mail', () => {
 				)
 
 				jest.spyOn(MailService, 'genId')
-				jest.spyOn(fileUtils, 'write')
+				jest.spyOn(FileUtils, 'write')
 
 				await MailService.save(mockedMail).pipe(
 					Effect.match({
@@ -64,8 +64,8 @@ describe('services/mail', () => {
 
 				expect(MailService.genId).toHaveBeenCalledTimes(1)
 				expect(MailService.genId).toHaveBeenCalledWith(mockedMail)
-				expect(fileUtils.write).toHaveBeenCalledTimes(1)
-				expect(fileUtils.write).toHaveBeenCalledWith(file, mockedMail.html)
+				expect(FileUtils.write).toHaveBeenCalledTimes(1)
+				expect(FileUtils.write).toHaveBeenCalledWith(file, mockedMail.html)
 			})
 		})
 
@@ -81,7 +81,7 @@ describe('services/mail', () => {
 
 				jest.spyOn(MailService, 'genId')
 				jest
-					.spyOn(fileUtils, 'write')
+					.spyOn(FileUtils, 'write')
 					.mockImplementation((file: string, content: string) =>
 						Effect.fail(
 							new FileHandler.AccessError(
@@ -110,8 +110,8 @@ describe('services/mail', () => {
 
 				expect(MailService.genId).toHaveBeenCalledTimes(1)
 				expect(MailService.genId).toHaveBeenCalledWith(mockedMail)
-				expect(fileUtils.write).toHaveBeenCalledTimes(1)
-				expect(fileUtils.write).toHaveBeenCalledWith(file, mockedMail.html)
+				expect(FileUtils.write).toHaveBeenCalledTimes(1)
+				expect(FileUtils.write).toHaveBeenCalledWith(file, mockedMail.html)
 			})
 		})
 	})

@@ -8,17 +8,17 @@ import * as FileHandler from '../handlers/file'
 import logger from './logger'
 
 /**
- * A utility function to check the accessibility of a given directory by verifying if it exists
+ * A utility function to check the accessibility of a given file/directory by verifying if it exists
  * and if the current process has read and write permissions.
  *
- * @param dir - The directory path to check. Must be a valid directory path string.
+ * @param file - The file/directory path to check. Must be a valid path string.
  *
- * @returns An `Effect` that yields the directory path if the directory exists and is accessible.
+ * @returns An `Effect` that yields the directory path if the file exists and is accessible.
  *
- * @throws AccessError - If there is an issue with accessing the directory, such as lack of permissions or non-existence of the directory.
+ * @throws AccessError - If there is an issue with accessing the file, such as lack of permissions or non-existence of the directory.
  *
  * @example
- * const checkDirectory = checkDir('/path/to/dir');
+ * const checkDirectory = checkFile('/path/to/dir');
  *
  * checkDirectory.pipe(Effect.runPromise).then((dir) => {
  *   console.log(`Directory is accessible: ${dir}`); // '/path/to/dir'
@@ -33,29 +33,30 @@ import logger from './logger'
  *   Effect.runPromise
  * ).then(console.log);
  */
-export const checkDir = (dir: string) =>
+
+export const checkFile = (file: string) =>
 	Effect.gen(function* () {
-		logger.debug(`Checking dir ${dir}`)
+		logger.debug(`Checking dir ${file}`)
 
 		yield* Effect.tryPromise({
 			try: () =>
 				new Promise((resolve, reject) => {
 					fs.access(
-						dir,
+						file,
 						fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK, // Ensure read/write permissions
 						(error) => {
 							if (error) {
 								return reject(error)
 							}
 
-							resolve(dir)
+							resolve(file)
 						}
 					)
 				}),
-			catch: (error) => new FileHandler.AccessError(error, dir, 'ACCESS')
+			catch: (error) => new FileHandler.AccessError(error, file, 'ACCESS')
 		})
 
-		return dir
+		return file
 	}).pipe(
 		Effect.catchAll((error) => {
 			logger.debug(`${error.title}, ${error.message}`)
@@ -144,7 +145,7 @@ export const makeDir = (dir: string) =>
  * ).then(console.log);
  */
 export const write = (file: string, content: string) =>
-	checkDir(path.dirname(file)).pipe(
+	checkFile(path.dirname(file)).pipe(
 		Effect.matchEffect({
 			onSuccess: (dir) => Effect.succeed(dir),
 			onFailure: (error) => {

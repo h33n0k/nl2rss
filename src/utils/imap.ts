@@ -111,11 +111,27 @@ export const parseMail = (stream: NodeJS.ReadableStream) =>
 
 export const fetchMails = (n: number) =>
 	Effect.gen(function* () {
-		logger.info('Fetching mails.')
+		logger.debug('Fetching mails.')
 		if (!client) return yield* Effect.fail(new ImapHandler.ClientError(client))
 
+		const uids = yield* Effect.tryPromise({
+			try: () =>
+				new Promise<number[]>((resolve, reject) => {
+					client.seq.search(['ALL'], (error, results) => {
+						if (error) return reject(error)
+						if (!results || results.length === 0) return resolve([])
+
+						return resolve(results.sort((a, b) => b - a).slice(0, n))
+					})
+				}),
+			catch: (error: unknown) => new ImapHandler.FetchError(error)
+		})
+
+		const range = uids.length > 0 ? `${uids[uids.length - 1]}:${uids[0]}` : ''
+		if (!range) return yield* Effect.fail(new ImapHandler.FetchError(null))
+
 		const f = yield* Effect.try({
-			try: () => client.seq.fetch(`1:${n}`, { envelope: true, bodies: '' }),
+			try: () => client.seq.fetch(range, { envelope: true, bodies: '' }),
 			catch: (error: unknown) => new ImapHandler.FetchError(error)
 		})
 
@@ -133,7 +149,7 @@ export const fetchMails = (n: number) =>
 			catch: (error: unknown) => new ImapHandler.FetchError(error)
 		})
 
-		logger.info(`${raws.length} mail(s) fetched.`)
+		logger.info(`${raws.length}/${n} mail(s) fetched.`)
 
 		const mails: MailSchema.Mail[] = []
 
@@ -163,7 +179,7 @@ export const listen = () =>
 				return new Promise((resolve, reject) => {
 					client.openBox(imapBox, (error, box) => {
 						if (error) reject(error)
-						logger.info(`Opened box '${imapBox}'`)
+						logger.debug(`Opened box '${imapBox}'`)
 						resolve(box)
 					})
 				})
@@ -172,7 +188,7 @@ export const listen = () =>
 		})
 
 		client.on('mail', (n: number) => {
-			logger.info(`${n} new mail(s) received.`)
+			logger.debug(`${n} new mail(s) received.`)
 			fetchMails(n).pipe(
 				Effect.flatMap((mails) => {
 					console.log({ mails })

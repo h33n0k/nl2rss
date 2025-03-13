@@ -5,6 +5,7 @@ import Imap from 'imap'
 import { ParsedMail, simpleParser } from 'mailparser'
 
 import * as MailSchema from '../schemas/mail'
+import * as MailService from '../services/mail'
 
 import logger from './logger'
 import * as ImapHandler from '../handlers/imap'
@@ -190,10 +191,19 @@ export const listen = () =>
 		client.on('mail', (n: number) => {
 			logger.debug(`${n} new mail(s) received.`)
 			fetchMails(n).pipe(
-				Effect.flatMap((mails) => {
-					console.log({ mails })
-					return Effect.succeed(mails)
-				}),
+				Effect.flatMap((mails) =>
+					Effect.gen(function* () {
+						for (const mail of mails) {
+							yield* MailService.save(mail).pipe(
+								Effect.catchAll((error) => {
+									logger.error(`${error.title} ${error.message}`)
+									return Effect.fail(error)
+								}),
+								Effect.ignore
+							)
+						}
+					})
+				),
 				Effect.ignore,
 				Effect.runPromise
 			)

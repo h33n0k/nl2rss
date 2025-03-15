@@ -52,6 +52,10 @@
 		"effect": "^3.13.1",
 		"imap": "^0.8.19",
 		"mailparser": "^3.7.2",
+		"reflect-metadata": "^0.2.2",
+		"sequelize": "^6.37.6",
+		"sequelize-typescript": "^2.1.6",
+		"sqlite3": "^5.1.7",
 		"winston": "^3.17.0",
 		"winston-daily-rotate-file": "^5.0.0",
 		"zod": "^3.24.2"

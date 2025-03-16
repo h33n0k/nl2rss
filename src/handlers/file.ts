@@ -25,7 +25,7 @@ export class AccessError extends Data.TaggedError('Access') {
 		switch (opperation) {
 			case 'MKDIR':
 			case 'WRITE':
-				this.title = `Could write ${this.file}`
+				this.title = `Could not write ${this.file}`
 				break
 			default:
 				this.title = `Could not access ${this.file}`

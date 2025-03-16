@@ -52,7 +52,7 @@ describe('services/mail', () => {
 				await MailService.save(mockedMail).pipe(
 					Effect.match({
 						onFailure: () => {
-							throw new Error('Expected the effect to pass')
+							throw new Error('Expected the effect to pass.')
 						},
 						onSuccess: (value) => {
 							expect(value).toBeDefined()
@@ -102,7 +102,7 @@ describe('services/mail', () => {
 							expect(error.code).toBe('EACCESS')
 						},
 						onSuccess: () => {
-							throw new Error('Expected the effect to fail')
+							throw new Error('Expected the effect to fail.')
 						}
 					}),
 					Effect.runPromise

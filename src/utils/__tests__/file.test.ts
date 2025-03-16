@@ -5,7 +5,7 @@ import { Effect } from 'effect'
 import { faker } from '@faker-js/faker'
 
 import * as FileHandler from '../../handlers/file'
-import * as fileUtil from '../file'
+import * as FileUtils from '../file'
 
 jest.mock('../logger')
 jest.mock('fs')
@@ -28,7 +28,7 @@ describe('utils/file', () => {
 						}
 					)
 
-					await fileUtil.checkFile(file).pipe(
+					await FileUtils.checkFile(file).pipe(
 						Effect.match({
 							onFailure: () => {
 								throw new Error('Expected the effect to pass.')
@@ -71,7 +71,7 @@ describe('utils/file', () => {
 						}
 					)
 
-					await fileUtil.checkFile(mockedDir).pipe(
+					await FileUtils.checkFile(mockedDir).pipe(
 						Effect.match({
 							onFailure: (error) => {
 								expect(error).toBeDefined()
@@ -110,7 +110,7 @@ describe('utils/file', () => {
 					}
 				)
 
-				await fileUtil.makeDir(mockedDir).pipe(
+				await FileUtils.makeDir(mockedDir).pipe(
 					Effect.match({
 						onFailure: () => {
 							throw new Error('Expected the effect to pass.')
@@ -157,7 +157,7 @@ describe('utils/file', () => {
 						}
 					)
 
-					await fileUtil.makeDir(mockedDir).pipe(
+					await FileUtils.makeDir(mockedDir).pipe(
 						Effect.match({
 							onFailure: (error) => {
 								expect(error).toBeDefined()
@@ -187,7 +187,7 @@ describe('utils/file', () => {
 		describe('Return value', () => {
 			it('should returns the specified path', async () => {
 				jest
-					.spyOn(fileUtil, 'checkFile')
+					.spyOn(FileUtils, 'checkFile')
 					.mockImplementation((dir: string) => Effect.succeed(dir))
 
 				const mockedWriteStream = new (require('stream').Writable)()
@@ -195,9 +195,10 @@ describe('utils/file', () => {
 				mockedWriteStream._write = jest.fn((_, __, cb) => cb())
 				;(fs.createWriteStream as jest.Mock).mockReturnValue(mockedWriteStream)
 
-				const result = await fileUtil
-					.write(mockedFile, faker.lorem.paragraph())
-					.pipe(Effect.runPromise)
+				const result = await FileUtils.write(
+					mockedFile,
+					faker.lorem.paragraph()
+				).pipe(Effect.runPromise)
 
 				expect(result).toBeDefined()
 				expect(result).toBe(mockedFile)
@@ -239,7 +240,7 @@ describe('utils/file', () => {
 				it(`should handle '${key}' error`, async () => {
 					if ('checkFile' in mocked) {
 						jest
-							.spyOn(fileUtil, 'checkFile')
+							.spyOn(FileUtils, 'checkFile')
 							.mockImplementation((dir: string) =>
 								Effect.fail(
 									new FileHandler.AccessError(
@@ -253,12 +254,12 @@ describe('utils/file', () => {
 							)
 					} else {
 						jest
-							.spyOn(fileUtil, 'checkFile')
+							.spyOn(FileUtils, 'checkFile')
 							.mockImplementation((dir: string) => Effect.succeed(dir))
 					}
 
 					if ('makeDir' in mocked) {
-						jest.spyOn(fileUtil, 'makeDir').mockImplementation((dir: string) =>
+						jest.spyOn(FileUtils, 'makeDir').mockImplementation((dir: string) =>
 							Effect.fail(
 								new FileHandler.AccessError(
 									Object.assign(new Error('mocked error message'), {
@@ -271,7 +272,7 @@ describe('utils/file', () => {
 						)
 					} else {
 						jest
-							.spyOn(fileUtil, 'makeDir')
+							.spyOn(FileUtils, 'makeDir')
 							.mockImplementation((dir: string) => Effect.succeed(dir))
 					}
 
@@ -297,29 +298,30 @@ describe('utils/file', () => {
 						})
 					}
 
-					const result = await fileUtil
-						.write(mockedFile, faker.lorem.paragraph())
-						.pipe(
-							Effect.match({
-								onSuccess: () => {
-									throw new Error('Expected the effect to fail.')
-								},
-								onFailure: (error) => {
-									expect(error).toBeDefined()
-									expect(error).toBeInstanceOf(FileHandler.AccessError)
-									if ('makeDir' in mocked) {
-										expect(error.code).toBe(mocked.makeDir?.code)
-									} else if ('checkFile' in mocked) {
-										expect(error.code).toBe(mocked.checkFile?.code)
-									} else if ('write' in mocked) {
-										expect(error.code).toBe(mocked.write?.code)
-									} else {
-										throw new Error('Unexpected Error occured.')
-									}
+					const result = await FileUtils.write(
+						mockedFile,
+						faker.lorem.paragraph()
+					).pipe(
+						Effect.match({
+							onSuccess: () => {
+								throw new Error('Expected the effect to fail.')
+							},
+							onFailure: (error) => {
+								expect(error).toBeDefined()
+								expect(error).toBeInstanceOf(FileHandler.AccessError)
+								if ('makeDir' in mocked) {
+									expect(error.code).toBe(mocked.makeDir?.code)
+								} else if ('checkFile' in mocked) {
+									expect(error.code).toBe(mocked.checkFile?.code)
+								} else if ('write' in mocked) {
+									expect(error.code).toBe(mocked.write?.code)
+								} else {
+									throw new Error('Unexpected Error occured.')
 								}
-							}),
-							Effect.runPromise
-						)
+							}
+						}),
+						Effect.runPromise
+					)
 
 					expect(result).toBeUndefined()
 					if (mocked.writeCalled) {
@@ -334,17 +336,17 @@ describe('utils/file', () => {
 		describe('Module dependencies', () => {
 			it('checks for file access', async () => {
 				jest
-					.spyOn(fileUtil, 'checkFile')
+					.spyOn(FileUtils, 'checkFile')
 					.mockImplementation((dir: string) => Effect.succeed(dir))
 
 				const mockedWriteStream = new (require('stream').Writable)()
 				mockedWriteStream._write = jest.fn((_, __, cb) => cb())
 				;(fs.createWriteStream as jest.Mock).mockReturnValue(mockedWriteStream)
 
-				await fileUtil
-					.write(mockedFile, faker.lorem.paragraph())
-					.pipe(Effect.runPromise)
-				expect(fileUtil.checkFile).toHaveBeenCalledWith(mockedDir)
+				await FileUtils.write(mockedFile, faker.lorem.paragraph()).pipe(
+					Effect.runPromise
+				)
+				expect(FileUtils.checkFile).toHaveBeenCalledWith(mockedDir)
 				expect(fs.createWriteStream).toHaveBeenCalledWith(mockedFile)
 			})
 
@@ -353,25 +355,25 @@ describe('utils/file', () => {
 					code: 'ENOENT'
 				})
 				jest
-					.spyOn(fileUtil, 'checkFile')
+					.spyOn(FileUtils, 'checkFile')
 					.mockImplementation((dir: string) =>
 						Effect.fail(new FileHandler.AccessError(error, dir, 'ACCESS'))
 					)
 
 				jest
-					.spyOn(fileUtil, 'makeDir')
+					.spyOn(FileUtils, 'makeDir')
 					.mockImplementation((dir: string) => Effect.succeed(dir))
 
 				const mockedWriteStream = new (require('stream').Writable)()
 				mockedWriteStream._write = jest.fn((_, __, cb) => cb())
 				;(fs.createWriteStream as jest.Mock).mockReturnValue(mockedWriteStream)
 
-				await fileUtil
-					.write(mockedFile, faker.lorem.paragraph())
-					.pipe(Effect.runPromise)
+				await FileUtils.write(mockedFile, faker.lorem.paragraph()).pipe(
+					Effect.runPromise
+				)
 
-				expect(fileUtil.checkFile).toHaveBeenCalledWith(mockedDir)
-				expect(fileUtil.makeDir).toHaveBeenCalledWith(mockedDir)
+				expect(FileUtils.checkFile).toHaveBeenCalledWith(mockedDir)
+				expect(FileUtils.makeDir).toHaveBeenCalledWith(mockedDir)
 				expect(fs.createWriteStream).toHaveBeenCalledWith(mockedFile)
 			})
 		})

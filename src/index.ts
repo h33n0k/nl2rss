@@ -1,9 +1,7 @@
+// Load environment
 import dotenv from 'dotenv'
-
 dotenv.config()
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import config from 'config'
+import 'config'
 
 import logger from './utils/logger'
 import * as database from './utils/database'

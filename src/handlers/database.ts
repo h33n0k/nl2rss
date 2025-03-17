@@ -93,3 +93,12 @@ export class SyncError extends Data.TaggedError('Auth') {
 		return message
 	}
 }
+export class ModelError extends Data.TaggedError('Model') {
+	public readonly title = 'Could not add Model'
+	public readonly error: unknown
+	public readonly message = 'Could not implement sequelize model.'
+	constructor(error: unknown) {
+		super()
+		this.error = error
+	}
+}

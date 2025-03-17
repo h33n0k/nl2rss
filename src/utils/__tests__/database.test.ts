@@ -18,6 +18,10 @@ import * as FileHandler from '../../handlers/file'
 jest.mock('sequelize-typescript')
 jest.mock('../logger')
 jest.mock('../file')
+jest.mock('../../models/mail', () => ({
+	__esModule: true,
+	default: class MockMailModel {}
+}))
 
 describe('utils/database', () => {
 	const storageDir = config.get<string>('data.path')
@@ -26,14 +30,12 @@ describe('utils/database', () => {
 	let mockedSequelize: jest.Mocked<Sequelize>
 
 	beforeEach(() => {
-		if (mockedSequelize) {
-			mockedSequelize.authenticate.mockReset()
-			mockedSequelize.sync.mockReset()
-		}
-
-		mockedSequelize = new Sequelize('sqlite::memory:') as jest.Mocked<Sequelize>
-		mockedSequelize.authenticate = jest.fn().mockResolvedValue(undefined)
-		mockedSequelize.sync = jest.fn().mockResolvedValue(undefined)
+		mockedSequelize = jest.createMockFromModule('sequelize-typescript')
+		Object.assign(mockedSequelize, {
+			authenticate: jest.fn().mockResolvedValue(undefined),
+			sync: jest.fn().mockResolvedValue(undefined),
+			addModels: jest.fn()
+		})
 	})
 
 	const defaultMocks = () => ({
@@ -48,7 +50,10 @@ describe('utils/database', () => {
 			.mockImplementation(() => Effect.succeed(mockedSequelize)),
 		sync: jest
 			.spyOn(DatabaseUtils, 'sync')
-			.mockImplementation(() => Effect.succeed(mockedSequelize))
+			.mockImplementation(() => Effect.succeed(mockedSequelize)),
+		addModels: jest
+			.spyOn(DatabaseUtils, 'addModels')
+			.mockImplementation(() => Effect.succeed(undefined))
 	})
 
 	const sequelizeMocks = () => ({
@@ -237,6 +242,7 @@ describe('utils/database', () => {
 					args: [[storageDir], [storageFile]]
 				},
 				{ spy: 'makeDir', times: 0 },
+				{ spy: 'addModels', times: 1 },
 				{ spy: 'auth', times: 1 },
 				{ spy: 'sync', times: 1 }
 			]
@@ -278,6 +284,7 @@ describe('utils/database', () => {
 					times: 1,
 					args: [[storageDir]]
 				},
+				{ spy: 'addModels', times: 1 },
 				{ spy: 'auth', times: 1 },
 				{ spy: 'sync', times: 1 }
 			]
@@ -318,6 +325,7 @@ describe('utils/database', () => {
 					times: 0,
 					args: [[storageDir]]
 				},
+				{ spy: 'addModels', times: 0 },
 				{ spy: 'auth', times: 0 },
 				{ spy: 'sync', times: 0 }
 			]

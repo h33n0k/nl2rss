@@ -33,7 +33,6 @@ import logger from './logger'
  *   Effect.runPromise
  * ).then(console.log);
  */
-
 export const checkFile = (file: string) =>
 	Effect.gen(function* () {
 		logger.debug(`Checking dir ${file}`)

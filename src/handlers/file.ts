@@ -17,7 +17,7 @@ export class AccessError extends Data.TaggedError('Access') {
 	constructor(
 		error: unknown,
 		file: string,
-		opperation: 'MKDIR' | 'ACCESS' | 'WRITE'
+		opperation: 'MKDIR' | 'ACCESS' | 'WRITE' | 'READ'
 	) {
 		super()
 		this.file = file

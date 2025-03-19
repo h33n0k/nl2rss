@@ -35,7 +35,7 @@ import logger from './logger'
  */
 export const checkFile = (file: string) =>
 	Effect.gen(function* () {
-		logger.debug(`Checking dir ${file}`)
+		logger.debug(`Checking file ${file}`)
 
 		yield* Effect.tryPromise({
 			try: () =>
@@ -192,3 +192,67 @@ export const write = (file: string, content: string) =>
 			)
 		)
 	)
+
+/**
+ * Reads the content of a specified file
+ *
+ * @param file - The path to the file to be read.
+ *
+ * @returns An `Effect` that resolves to the file content as a string.
+ *
+ * @throws AccessError - If an issue occurs while accessing the file.
+ *
+ * @example
+ * const readFile = read('/path/to/file.html');
+ *
+ * readFile.pipe(Effect.runPromise).then((content) => {
+ *   console.log(`File content: ${content}`);
+ * }).catch((error) => {
+ *   console.error(error); // Handles AccessError
+ * });
+ *
+ * @example
+ * // Handling errors explicitly:
+ * read('/path/to/file.html').pipe(
+ *   Effect.catchAll((error) => Effect.succeed(`Error reading file: ${error.message}`)),
+ *   Effect.runPromise
+ * ).then(console.log);
+ */
+
+export const read = (file: string) =>
+	Effect.gen(function* () {
+		logger.debug(`Reading ${file}`)
+
+		return yield* Effect.tryPromise({
+			try: () =>
+				new Promise<string>((resolve, reject) => {
+					const stream = fs.createReadStream(file)
+
+					let data = ''
+					stream.on('data', (chunk) => (data += chunk))
+					stream.on('end', () => resolve(data))
+					stream.on('error', (error) => reject(error))
+				}),
+			catch: (error) => new FileHandler.AccessError(error, file, 'READ')
+		})
+	}).pipe(
+		Effect.catchAll((error) => {
+			logger.debug(`${error.title}, ${error.message}`)
+			return error
+		})
+	)
+
+// export const stat = (f: string) =>
+// 	checkFile(f).pipe(
+// 		Effect.flatMap((file) =>
+// 			Effect.tryPromise({
+// 				try: () => new Promise<fs.Stats>((resolve, reject) =>
+// 					fs.stat(file, (error, stats) => {
+// 						if (error) return reject(error)
+// 						resolve(stats)
+// 					})
+// 				),
+// 				catch: (error) => new FileHandler.AccessError(error, file, 'ACCESS')
+// 			})
+// 		)
+// 	)

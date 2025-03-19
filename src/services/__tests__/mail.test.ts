@@ -13,7 +13,7 @@ import { Mail } from '../../schemas/mail'
 
 import * as FileUtils from '../../utils/file'
 import MailModel, { Input as MailModelInput } from '../../models/mail'
-import { Default } from 'sequelize-typescript'
+
 jest.mock('../../utils/logger')
 jest.mock('../../utils/file')
 
@@ -26,17 +26,26 @@ const mockMail = (): Mail => ({
 })
 
 const mockedId = faker.string.uuid()
+let mockedMailLength = 0
+let mockedMails: MailModel[] = []
 
 interface DefaultMocks {
 	genId: jest.SpyInstance
+	checkFile: jest.SpyInstance
 	write: jest.SpyInstance
 	create: jest.SpyInstance
+	findAll: jest.SpyInstance
 }
+
+const sequelize = database.sequelize
 
 const defaultMocks = (): DefaultMocks => ({
 	genId: jest
 		.spyOn(MailService, 'genId')
 		.mockImplementation(() => Effect.succeed(mockedId)),
+	checkFile: jest
+		.spyOn(FileUtils, 'checkFile')
+		.mockImplementation((file: string) => Effect.succeed(file)),
 	write: jest
 		.spyOn(FileUtils, 'write')
 		.mockImplementation((file: string) => Effect.succeed(file)),
@@ -47,11 +56,37 @@ const defaultMocks = (): DefaultMocks => ({
 				new Promise<MailModel>((resolve) =>
 					resolve(new MailModel(values as MailModelInput))
 				)
-		)
+		),
+	findAll: jest.spyOn(MailModel, 'findAll')
 })
 
 describe('services/mail', () => {
-	describe('`genID` method', () => {
+	beforeAll(async () => {
+		sequelize.addModels([MailModel])
+		await database.init()
+		await database.connect()
+	})
+
+	beforeEach(async () => {
+		mockedMailLength = faker.number.int({ min: 5, max: 15 })
+		mockedMails = new Array(mockedMailLength)
+			.fill(null)
+			.map(
+				() =>
+					new MailModel({ ...mockMail(), file: `${faker.string.uuid()}.html` })
+			)
+
+		for (const mail of mockedMails) {
+			await new Promise<void>((resolve) => setTimeout(resolve, 5))
+			await mail.save()
+		}
+	})
+
+	afterAll(async () => {
+		await database.disconnect()
+	})
+
+	describe('`genID` method:', () => {
 		it('should generate imutable hash from input', () => {
 			const mockedMail = mockMail()
 			const call1 = Effect.runSync(MailService.genId(mockedMail))
@@ -65,305 +100,344 @@ describe('services/mail', () => {
 		})
 	})
 
-	const sequelize = database.sequelize
-	beforeAll(async () => {
-		sequelize.addModels([MailModel])
-		await database.init()
-		await database.connect()
-	})
-
-	afterAll(async () => {
-		await database.disconnect()
-	})
-
-	interface TestCall {
-		spy: keyof DefaultMocks
-		times: number
-		args?: ('file' | 'mail' | 'input' | keyof Mail)[][]
-	}
-
-	const defaultCalls: TestCall[] = [
-		{
-			spy: 'genId',
-			times: 1,
-			args: [['mail']]
-		},
-		{
-			spy: 'write',
-			times: 1,
-			args: [['file']]
-		},
-		{
-			spy: 'create',
-			times: 1,
-			args: [['input']]
-		}
-	]
-
-	const tests: {
-		description: string
-		expectSuccess: boolean
-		mail: () => Mail
-		mocks: () => DefaultMocks
-		calls: TestCall[]
-		expectError?: any
-	}[] = [
-		{
-			description: 'should save given mail',
-			expectSuccess: true,
-			mail: mockMail,
-			mocks: defaultMocks,
-			calls: defaultCalls
-		}
-	]
-
-	const errors = new Map<
-		string,
-		{
-			error: any
-			mock: keyof DefaultMocks
-			expectedHandler:
-				| typeof DatabaseHandler.QueryError
-				| typeof FileHandler.AccessError
-				| typeof MailHandler.IdError
-		}
-	>()
-
-	errors.set('should handle id errors', {
-		error: new MailHandler.IdError(
-			new Error('mocked error message'),
-			mockMail()
-		),
-		mock: 'genId',
-		expectedHandler: MailHandler.IdError
-	})
-
-	errors.set('should handle file errors', {
-		error: new FileHandler.AccessError(
-			new Error('mocked error message'),
-			mockedId,
-			'WRITE'
-		),
-		mock: 'write',
-		expectedHandler: FileHandler.AccessError
-	})
-
-	errors.set('should handle query errors', {
-		error: new DatabaseHandler.QueryError(new Error('mocked error message')),
-		mock: 'create',
-		expectedHandler: DatabaseHandler.QueryError
-	})
-
-	for (const [
-		description,
-		{ error, mock, expectedHandler }
-	] of errors.entries()) {
-		const calls = [...defaultCalls]
-		switch (mock) {
-			case 'genId':
-				calls[1].times = 0
-				calls[2].times = 0
-				break
-			case 'write':
-				calls[2].times = 0
-				break
+	describe('`save` method:', () => {
+		interface TestCall {
+			spy: keyof DefaultMocks
+			times: number
+			args?: ('file' | 'mail' | 'input' | keyof Mail)[][]
 		}
 
-		const mocks = () => {
-			const m = defaultMocks()
+		const defaultCalls: TestCall[] = [
+			{
+				spy: 'genId',
+				times: 1,
+				args: [['mail']]
+			},
+			{
+				spy: 'write',
+				times: 1,
+				args: [['file']]
+			},
+			{
+				spy: 'create',
+				times: 1,
+				args: [['input']]
+			}
+		]
 
+		const tests: {
+			description: string
+			expectSuccess: boolean
+			mail: () => Mail
+			mocks: () => DefaultMocks
+			calls: TestCall[]
+			expectError?: any
+		}[] = [
+			{
+				description: 'should save given mail',
+				expectSuccess: true,
+				mail: mockMail,
+				mocks: defaultMocks,
+				calls: defaultCalls
+			}
+		]
+
+		const errors = new Map<
+			string,
+			{
+				error: any
+				mock: keyof DefaultMocks
+				expectedHandler:
+					| typeof DatabaseHandler.QueryError
+					| typeof FileHandler.AccessError
+					| typeof MailHandler.IdError
+			}
+		>()
+
+		errors.set('should handle id errors', {
+			error: new MailHandler.IdError(
+				new Error('mocked error message'),
+				mockMail()
+			),
+			mock: 'genId',
+			expectedHandler: MailHandler.IdError
+		})
+
+		errors.set('should handle file errors', {
+			error: new FileHandler.AccessError(
+				new Error('mocked error message'),
+				mockedId,
+				'WRITE'
+			),
+			mock: 'write',
+			expectedHandler: FileHandler.AccessError
+		})
+
+		errors.set('should handle query errors', {
+			error: new DatabaseHandler.QueryError(new Error('mocked error message')),
+			mock: 'create',
+			expectedHandler: DatabaseHandler.QueryError
+		})
+
+		for (const [
+			description,
+			{ error, mock, expectedHandler }
+		] of errors.entries()) {
+			const calls = [...defaultCalls]
 			switch (mock) {
 				case 'genId':
-					m.genId = jest
-						.spyOn(MailService, 'genId')
-						.mockImplementation(() => Effect.fail(error))
+					calls[1].times = 0
+					calls[2].times = 0
 					break
 				case 'write':
-					m.write = jest
-						.spyOn(FileUtils, 'write')
-						.mockImplementation(() => Effect.fail(error))
-					break
-				case 'create':
-					m.create = jest
-						.spyOn(MailModel, 'create')
-						.mockImplementation(
-							() => new Promise<MailModel>((_, reject) => reject(error))
-						)
+					calls[2].times = 0
 					break
 			}
 
-			return m
+			const mocks = () => {
+				const m = defaultMocks()
+
+				switch (mock) {
+					case 'genId':
+						m.genId = jest
+							.spyOn(MailService, 'genId')
+							.mockImplementation(() => Effect.fail(error))
+						break
+					case 'write':
+						m.write = jest
+							.spyOn(FileUtils, 'write')
+							.mockImplementation(() => Effect.fail(error))
+						break
+					case 'create':
+						m.create = jest
+							.spyOn(MailModel, 'create')
+							.mockImplementation(
+								() => new Promise<MailModel>((_, reject) => reject(error))
+							)
+						break
+				}
+
+				return m
+			}
+
+			tests.push({
+				description,
+				expectSuccess: false,
+				mail: mockMail,
+				expectError: expectedHandler,
+				mocks,
+				calls
+			})
 		}
 
-		tests.push({
-			description,
-			expectSuccess: false,
-			mail: mockMail,
-			expectError: expectedHandler,
-			mocks,
-			calls
-		})
-	}
+		describe.each(tests)(
+			'suit:',
+			({ description, expectSuccess, mail, mocks, calls, expectError }) => {
+				it(description, async () => {
+					// Setup mocks
+					const spies = mocks()
+					const mockedMail = mail()
 
-	describe.each(tests)(
-		'`save` method',
-		({ description, expectSuccess, mail, mocks, calls, expectError }) => {
-			it(description, async () => {
-				// Setup mocks
-				const spies = mocks()
-				const mockedMail = mail()
-
-				await MailService.save(mockedMail).pipe(
-					Effect.match({
-						onSuccess: (result) => {
-							if (expectSuccess) {
-								expect(result).toBeInstanceOf(MailModel)
-							} else {
-								throw new Error('Expected the effect to fail.')
+					await MailService.save(mockedMail).pipe(
+						Effect.match({
+							onSuccess: (result) => {
+								if (expectSuccess) {
+									expect(result).toBeInstanceOf(MailModel)
+								} else {
+									throw new Error('Expected the effect to fail.')
+								}
+							},
+							onFailure: (error) => {
+								if (!expectSuccess) {
+									expect(error).toBeInstanceOf(expectError)
+								} else {
+									throw error
+								}
 							}
-						},
-						onFailure: (error) => {
-							if (!expectSuccess) {
-								expect(error).toBeInstanceOf(expectError)
-							} else {
-								throw error
-							}
-						}
-					}),
-					Effect.runPromise
-				)
+						}),
+						Effect.runPromise
+					)
 
-				// Assertions
-				for (const { spy, times, args } of calls) {
-					if (times > 0) {
-						const spyInstance = spies[spy as keyof typeof spies]
-						expect(spyInstance).toHaveBeenCalledTimes(times)
-						if (args && args.length > 0) {
-							for (let i = 0; i < times; i++) {
-								const mockedFile = path.join(
-									config.get<string>('data.path'),
-									'mails',
-									`${mockedId}.html`
-								)
+					// Assertions
+					for (const { spy, times, args } of calls) {
+						if (times > 0) {
+							const spyInstance = spies[spy as keyof typeof spies]
+							expect(spyInstance).toHaveBeenCalledTimes(times)
+							if (args && args.length > 0) {
+								for (let i = 0; i < times; i++) {
+									const mockedFile = path.join(
+										config.get<string>('data.path'),
+										'mails',
+										`${mockedId}.html`
+									)
 
-								const v = args[i].map((arg) => {
-									switch (true) {
-										case arg === 'mail':
-											return mockedMail
-										case arg === 'file':
-											return mockedFile
-										case arg === 'input':
-											return { ...mockedMail, file: path.basename(mockedFile) }
-										case arg in mockedMail:
-											return mockedMail[arg]
+									const v = args[i].map((arg) => {
+										switch (true) {
+											case arg === 'mail':
+												return mockedMail
+											case arg === 'file':
+												return mockedFile
+											case arg === 'input':
+												return {
+													...mockedMail,
+													file: path.basename(mockedFile)
+												}
+											case arg in mockedMail:
+												return mockedMail[arg]
+										}
+									})
+
+									for (let j = 0; j < spyInstance.mock.calls.length; j++) {
+										expect(spyInstance.mock.calls[i][j]).toEqual(v[j])
 									}
-								})
-
-								for (let j = 0; j < spyInstance.mock.calls.length; j++) {
-									expect(spyInstance.mock.calls[i][j]).toEqual(v[j])
 								}
 							}
 						}
 					}
-				}
-			})
+				})
+			}
+		)
+	})
+
+	describe('`getLatest` method:', () => {
+		interface TestCall {
+			spy: keyof DefaultMocks
+			times: number
+			args?: 'file'[][]
 		}
-	)
 
-	// 	describe('`save` method', () => {
+		const defaultCalls: TestCall[] = [
+			{
+				spy: 'findAll',
+				times: 1
+			},
+			{
+				spy: 'checkFile',
+				times: mockedMailLength
+			}
+		]
 
-	// 		const sequelize = database.sequelize
-	// 		sequelize.addModels([MailModel])
-	// 		beforeAll(async () => {
-	// 			await database.init()
-	// 			await database.connect()
-	// 		})
+		const tests: {
+			description: string
+			expectSuccess: boolean
+			expectLength?: (mocked: number) => number
+			mocks: () => DefaultMocks
+			calls: TestCall[]
+			expectError?: any
+		}[] = [
+			{
+				description: 'should retreive n latest mail',
+				expectSuccess: true,
+				mocks: defaultMocks,
+				calls: defaultCalls
+			},
+			{
+				description: 'should filter inexistant files',
+				expectSuccess: true,
+				expectLength: (mocked) => mocked - 1,
+				mocks: () => {
+					const m = defaultMocks()
 
-	// 		afterAll(async () => {
-	// 			await database.disconnect()
-	// 		})
+					m.checkFile = m.checkFile.mockImplementationOnce((file: string) =>
+						Effect.fail(
+							new FileHandler.AccessError(
+								Object.assign(new Error('mocked error message'), {
+									code: 'ENOENT'
+								}),
+								file,
+								'ACCESS'
+							)
+						)
+					)
 
-	// 		describe('Return value', () => {
-	// 			it('should returns the mail model', async () => {
-	// 				const mockedMail = mockMail()
-	// 				const id = Effect.runSync(MailService.genId(mockedMail))
-	// 				const file = path.join(
-	// 					config.get<string>('data.path'),
-	// 					'mails',
-	// 					`${id}.html`
-	// 				)
+					return m
+				},
+				calls: defaultCalls
+			},
+			{
+				description: 'should handle query errors.',
+				expectSuccess: false,
+				mocks: () => {
+					const m = defaultMocks()
 
-	// 				jest.spyOn(MailService, 'genId')
-	// 				jest.spyOn(FileUtils, 'write')
-	// 				jest.spyOn(MailModel, 'create')
+					m.findAll = jest
+						.spyOn(MailModel, 'findAll')
+						.mockImplementation(
+							() =>
+								new Promise<MailModel[]>((_, reject) =>
+									reject(new Error('mocked error message.'))
+								)
+						)
 
-	// 				await MailService.save(mockedMail).pipe(
-	// 					Effect.match({
-	// 						onFailure: (error) => {
-	// 							console.error(error)
-	// 							throw new Error('Expected the effect to pass.')
-	// 						},
-	// 						onSuccess: (value) => {
-	// 							expect(value).toBeDefined()
-	// 							expect(value).toBeInstanceOf(MailModel)
-	// 							expect(value.address).toEqual(mockedMail.address)
-	// 						}
-	// 					}),
-	// 					Effect.runPromise
-	// 				)
+					return m
+				},
+				expectError: DatabaseHandler.QueryError,
+				calls: (() => {
+					const c = defaultCalls
 
-	// 				expect(MailService.genId).toHaveBeenCalledTimes(1)
-	// 				expect(MailService.genId).toHaveBeenCalledWith(mockedMail)
-	// 				expect(FileUtils.write).toHaveBeenCalledTimes(1)
-	// 				expect(FileUtils.write).toHaveBeenCalledWith(file, mockedMail.html)
-	// 				expect(MailModel.create).toHaveBeenCalledTimes(1)
-	// 			})
-	// 		})
+					c[1].times = 0
 
-	// 		describe('Error handling', () => {
-	// 			it('should handle write errors', async () => {
-	// 				const mockedMail = mockMail()
-	// 				const id = Effect.runSync(MailService.genId(mockedMail))
-	// 				const file = path.join(
-	// 					config.get<string>('data.path'),
-	// 					'mails',
-	// 					`${id}.html`
-	// 				)
+					return c
+				})()
+			}
+		]
 
-	// 				jest.spyOn(MailService, 'genId')
-	// 				jest
-	// 					.spyOn(FileUtils, 'write')
-	// 					.mockImplementation((file: string, content: string) =>
-	// 						Effect.fail(
-	// 							new FileHandler.AccessError(
-	// 								Object.assign(new Error('Mocked error message'), {
-	// 									code: 'EACCESS'
-	// 								}),
-	// 								file,
-	// 								'WRITE'
-	// 							)
-	// 						)
-	// 					)
+		describe.each(tests)(
+			'suit:',
+			({
+				description,
+				expectSuccess,
+				expectLength,
+				mocks,
+				calls,
+				expectError
+			}) => {
+				it(description, async () => {
+					// Setup mocks
+					const spies = mocks()
 
-	// 				await MailService.save(mockedMail).pipe(
-	// 					Effect.match({
-	// 						onFailure: (error) => {
-	// 							expect(error).toBeDefined()
-	// 							expect(error).toBeInstanceOf(FileHandler.AccessError)
-	// 							expect(error.code).toBe('EACCESS')
-	// 						},
-	// 						onSuccess: () => {
-	// 							throw new Error('Expected the effect to fail.')
-	// 						}
-	// 					}),
-	// 					Effect.runPromise
-	// 				)
+					await MailService.getLatest(mockedMailLength).pipe(
+						Effect.match({
+							onSuccess: (result) => {
+								if (expectSuccess) {
+									expect(result).toBeInstanceOf(Array)
 
-	// 				expect(MailService.genId).toHaveBeenCalledTimes(1)
-	// 				expect(MailService.genId).toHaveBeenCalledWith(mockedMail)
-	// 				expect(FileUtils.write).toHaveBeenCalledTimes(1)
-	// 				expect(FileUtils.write).toHaveBeenCalledWith(file, mockedMail.html)
-	// 			})
-	// 		})
-	// 	})
+									if (expectLength) {
+										expect(result.length).toEqual(
+											expectLength(mockedMailLength)
+										)
+									} else {
+										expect(result.length).toEqual(mockedMailLength)
+										expect(result[0].createdAt.getTime()).toBeLessThan(
+											result[1].createdAt.getTime()
+										)
+									}
+
+									expect(result[0]).toBeInstanceOf(MailModel)
+								} else {
+									throw new Error('Expected the effect to fail.')
+								}
+							},
+							onFailure: (error) => {
+								if (!expectSuccess) {
+									expect(error).toBeInstanceOf(expectError)
+								} else {
+									throw error
+								}
+							}
+						}),
+						Effect.runPromise
+					)
+
+					// Assertions
+					for (const { spy, times } of calls) {
+						if (times > 0) {
+							const spyInstance = spies[spy as keyof typeof spies]
+							expect(spyInstance).toHaveBeenCalledTimes(times)
+						}
+					}
+				})
+			}
+		)
+	})
 })

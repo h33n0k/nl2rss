@@ -3,6 +3,7 @@ import { createHash } from 'crypto'
 
 import config from 'config'
 import { Effect } from 'effect'
+import { Op } from 'sequelize'
 
 import * as MailHandler from '../handlers/mail'
 import { Mail } from '../schemas/mail'
@@ -10,7 +11,7 @@ import MailModel from '../models/mail'
 
 import * as DatabaseHandler from '../handlers/database'
 import logger from '../utils/logger'
-import { write } from '../utils/file'
+import { checkFile, write } from '../utils/file'
 
 /**
  * Generates a unique identifier (SHA-256 hash) for a given email object based on its date and address.
@@ -82,4 +83,61 @@ export const save = (mail: Mail) =>
 		),
 		Effect.tap((mail) => logger.debug(`Saved mail record ${mail.id}`)),
 		Effect.tap((mail) => logger.info(`Saved mail ${mail.file}`))
+	)
+
+/**
+ * Retrieves the latest non-deleted emails from the database, filtering out entries with missing files.
+ *
+ * @param n - The maximum number of emails to retrieve.
+ *
+ * @returns An `Effect` that resolves to an array of `MailModel` instances.
+ *
+ * @throws QueryError - If an issue occurs while querying the database.
+ *
+ * @example
+ * const latestMails = getLatest(5);
+ *
+ * latestMails.pipe(Effect.runPromise).then((mails) => {
+ *   console.log(`Retrieved ${mails.length} emails.`);
+ * }).catch((error) => {
+ *   console.error(error); // Handles QueryError
+ * });
+ *
+ * @example
+ * // Handling errors explicitly:
+ * getLatest(5).pipe(
+ *   Effect.catchAll((error) => Effect.succeed([])), // Return an empty array on failure
+ *   Effect.runPromise
+ * ).then(console.log);
+ */
+export const getLatest = (n: number) =>
+	Effect.tryPromise({
+		try: () =>
+			MailModel.findAll({
+				where: { deletedAt: { [Op.is]: undefined } },
+				order: [['createdAt', 'ASC']],
+				limit: n
+			}),
+		catch: (error) => new DatabaseHandler.QueryError(error)
+	}).pipe(
+		Effect.flatMap((mails) =>
+			Effect.gen(function* () {
+				const filtered: MailModel[] = []
+				for (const mail of mails) {
+					yield* checkFile(
+						path.join(config.get<string>('data.path'), 'mails', mail.file)
+					).pipe(
+						Effect.match({
+							onSuccess: () => filtered.push(mail),
+							onFailure: (error) => {
+								logger.warn(`${error.title}, ${error.message}`)
+								return Effect.ignore(error)
+							}
+						})
+					)
+				}
+
+				return filtered
+			})
+		)
 	)

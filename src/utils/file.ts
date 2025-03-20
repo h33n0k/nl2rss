@@ -218,7 +218,6 @@ export const write = (file: string, content: string) =>
  *   Effect.runPromise
  * ).then(console.log);
  */
-
 export const read = (file: string) =>
 	Effect.gen(function* () {
 		logger.debug(`Reading ${file}`)

@@ -10,7 +10,7 @@ export default {
 	},
 	rss: {
 		limit: 10,
-		cache_time: 5000,
+		cache_time: 1000 * 60 * 10, // 10 minutes
 		title: 'nl2rss feed',
 		description: 'Rss feed from mail box.'
 	},

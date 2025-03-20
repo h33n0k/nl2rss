@@ -2,10 +2,11 @@ import path from 'path'
 import config from 'config'
 
 import RSS from 'rss'
+import { Effect } from 'effect'
 
 import * as FileUtils from '../utils/file'
 import * as MailService from './mail'
-import { Effect } from 'effect'
+import * as RssHandler from '../handlers/rss'
 
 export const write = Effect.gen(function* () {
 	const mails = yield* MailService.getLatest(config.get<number>('rss.limit'))
@@ -32,7 +33,7 @@ export const write = Effect.gen(function* () {
 					date: mail.createdAt
 				})
 			},
-			catch: (error) => Effect.fail(error)
+			catch: (error) => new RssHandler.RssError(error)
 		})
 	}
 

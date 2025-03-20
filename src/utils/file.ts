@@ -241,17 +241,18 @@ export const read = (file: string) =>
 		})
 	)
 
-// export const stat = (f: string) =>
-// 	checkFile(f).pipe(
-// 		Effect.flatMap((file) =>
-// 			Effect.tryPromise({
-// 				try: () => new Promise<fs.Stats>((resolve, reject) =>
-// 					fs.stat(file, (error, stats) => {
-// 						if (error) return reject(error)
-// 						resolve(stats)
-// 					})
-// 				),
-// 				catch: (error) => new FileHandler.AccessError(error, file, 'ACCESS')
-// 			})
-// 		)
-// 	)
+export const stat = (f: string) =>
+	checkFile(f).pipe(
+		Effect.flatMap((file) =>
+			Effect.tryPromise({
+				try: () =>
+					new Promise<{ file: string; stats: fs.Stats }>((resolve, reject) =>
+						fs.stat(file, (error, stats) => {
+							if (error) return reject(error)
+							resolve({ file, stats })
+						})
+					),
+				catch: (error) => new FileHandler.AccessError(error, file, 'ACCESS')
+			})
+		)
+	)

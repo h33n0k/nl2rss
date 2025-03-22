@@ -23,6 +23,6 @@ export default {
 	},
 	http: {
 		port: 'HTTP_PORT',
-		baseurl: 'HTTP_BASEURL'
+		baseurl: 'BASE_URL'
 	}
 }

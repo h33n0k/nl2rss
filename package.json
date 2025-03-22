@@ -12,18 +12,18 @@
 	"bugs": {
 		"url": "https://github.com/h33n0k/nl2rss/issues"
 	},
-	"main": "dist/index.js",
-	"bin": "dist/index.js",
+	"main": "dist/src/index.js",
+	"bin": "dist/src/index.js",
 	"scripts": {
 		"start": "cross-env NODE_ENV=production node dist/src/index.js",
-		"dev": "cross-env NODE_ENV=production LOG_LEVEL=debug ts-node-dev --quiet --clear --rs --transpile-only src/index.ts",
+		"dev": "cross-env NODE_ENV=development ts-node-dev --quiet --clear --rs --transpile-only src/index.ts",
 		"build": "cross-env NODE_ENV=production npx tsc -p ./tsconfig.build.json",
-		"test": "cross-env NODE_ENV=development LOG_LEVEL=DEBUG jest",
+		"test": "cross-env NODE_ENV=development jest",
 		"clean": "rm -rf dist/",
 		"format": "prettier --write \"**/*.ts\"",
 		"lint": "eslint -c ./eslint.config.mjs \"./**/*.ts\" --fix",
 		"release": "standard-version",
-		"prepare": "husky"
+		"prepare": "[[ \"$HUSKY\" != \"false\" ]] && husky || true"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.20.0",
@@ -37,8 +37,6 @@
 		"@types/node": "^22.13.4",
 		"@types/rss": "^0.0.32",
 		"@types/supertest": "^6.0.2",
-		"cross-env": "^7.0.3",
-		"dotenv": "^16.4.7",
 		"eslint": "^9.20.1",
 		"eslint-config-prettier": "^10.0.1",
 		"globals": "^15.15.0",
@@ -54,6 +52,8 @@
 	},
 	"dependencies": {
 		"config": "^3.3.12",
+		"cross-env": "^7.0.3",
+		"dotenv": "^16.4.7",
 		"effect": "^3.13.1",
 		"express": "^4.19.2",
 		"imap": "^0.8.19",

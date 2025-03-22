@@ -1,0 +1,13 @@
+services:
+
+  nl2rss:
+    image: nl2rss
+    container_name: nl2rss
+    build:
+      context: .
+    env_file: .env
+    volumes:
+      - ./container-data/data/:/var/lib/nl2rss
+      - ./container-data/log/:/var/log/nl2rss
+    ports:
+      - 80:3000

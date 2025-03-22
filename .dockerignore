@@ -1,0 +1,9 @@
+.git
+.env
+.gitignore
+.prettier*
+*.md
+LICENSE
+eslint.config.mjs
+jest.config.cjs
+.husky/

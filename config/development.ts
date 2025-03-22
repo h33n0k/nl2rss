@@ -1,5 +1,5 @@
 export default {
 	logs: {
-		level: 'http'
+		level: 'debug'
 	}
 }

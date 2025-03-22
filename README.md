@@ -15,7 +15,7 @@ It allows users to receive their favorite newsletters directly in their RSS read
 ## Usage
 ```bash
 # Access Main Feed
->your_baseurl>rss
+<your_baseurl>rss
 ```
 
 ## Installation

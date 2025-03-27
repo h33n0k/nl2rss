@@ -15,7 +15,7 @@ It allows users to receive their favorite newsletters directly in their RSS read
 ## Usage
 ```bash
 # Access Main Feed
-<your_baseurl>rss
+<your_baseurl>/rss
 ```
 
 ## Installation
@@ -27,7 +27,7 @@ cd nl2rss
 2. Configure Environment Variables
 Create a `.env` file or specify these variables directly in your docker environment
 ```.env
-BASE_URL="http://localhost:3000"
+BASE_URL="https://<domain name>"
 
 IMAP_USER="<email address>"
 IMAP_PASSWORD="<password>"
@@ -51,7 +51,7 @@ docker compose up -d
 | Variable   |      Description      |  Default Value |
 |----------|---------------|-------|
 | `BASE_URL` |  your server base url | `http://localhost` |
-| `HTTP_PORT` | Express listening port | `3000` |
+| `HTTP_PORT` | HTTP server listening port | `3000` |
 | `LOGS_LEVEL` | Logs level | `http` |
 | `LOGS_PATH` | Logs path | `/var/log/nl2rss/` |
 | `IMAP_RETRIES` | Number of retries in case of connection failed | `3` |

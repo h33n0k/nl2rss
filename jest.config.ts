@@ -14,13 +14,13 @@ const config: Config = {
 	collectCoverageFrom: ['src/**/*.ts'],
 	coverageThreshold: {
 		global: {
-			branches: 60,
-			functions: 80,
-			lines: 70,
-			statements: 70
+			branches: 85,
+			functions: 85,
+			lines: 85,
+			statements: 85
 		}
 	},
-	coverageReporters: ['json-summary', 'text', 'lcov']
+	coverageReporters: ['json-summary', 'lcov']
 }
 
 export default config

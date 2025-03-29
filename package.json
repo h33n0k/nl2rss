@@ -26,8 +26,17 @@
 		"release": "standard-version",
 		"prepare": "if [ \"$HUSKY\" != \"false\" ]; then husky; fi"
 	},
+	"prettier": {
+		"semi": false,
+		"singleQuote": true,
+		"printWidth": 80,
+		"trailingComma": "none",
+		"useTabs": true,
+		"tabWidth": 2
+	},
 	"lint-staged": {
-		"*": "yarn lint"
+		"*.ts": "eslint -c ./eslint.config.mjs",
+		"*.{ts,json}": "prettier --write"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.20.0",

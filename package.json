@@ -24,7 +24,7 @@
 		"lint": "eslint -c ./eslint.config.mjs \"./**/*.ts\"",
 		"lint:fix": "eslint -c ./eslint.config.mjs \"./**/*.ts\" --fix",
 		"release": "standard-version",
-		"prepare": "[[ \"$HUSKY\" != \"false\" ]] && husky || true"
+		"prepare": "if [ \"$HUSKY\" != \"false\" ]; then husky; fi"
 	},
 	"lint-staged": {
 		"*": "yarn lint"

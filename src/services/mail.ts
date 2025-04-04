@@ -115,7 +115,7 @@ export const getLatest = (n: number) =>
 		try: () =>
 			MailModel.findAll({
 				where: { deletedAt: { [Op.is]: undefined } },
-				order: [['createdAt', 'ASC']],
+				order: [['createdAt', 'DESC']],
 				limit: n
 			}),
 		catch: (error) => new DatabaseHandler.QueryError(error)

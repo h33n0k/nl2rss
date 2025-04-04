@@ -408,7 +408,7 @@ describe('services/mail', () => {
 										)
 									} else {
 										expect(result.length).toEqual(mockedMailLength)
-										expect(result[0].createdAt.getTime()).toBeLessThan(
+										expect(result[0].createdAt.getTime()).toBeGreaterThan(
 											result[1].createdAt.getTime()
 										)
 									}

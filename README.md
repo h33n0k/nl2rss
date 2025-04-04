@@ -51,6 +51,10 @@ docker compose up -d
 | Variable   |      Description      |  Default Value |
 |----------|---------------|-------|
 | `BASE_URL` |  your server base url | `http://localhost` |
+| `RSS_SIZE` | Maximum number of emails included in the feed | `10` |
+| `RSS_CACHE_TIME` | 	Minimum time (in milliseconds) before the feed is regenerated | `600000` (10 minutes) |
+| `RSS_TITLE` | Title of the RSS feed | `nl2rss feed` |
+| `RSS_DESCRIPTION` | Description of the RSS feed | `Rss feed from mail box.` |
 | `HTTP_PORT` | HTTP server listening port | `3000` |
 | `LOGS_LEVEL` | Logs level | `http` |
 | `LOGS_PATH` | Logs path | `/var/log/nl2rss/` |
